@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Home Sofa Admin</title>
+    <link rel="stylesheet" href="assets/css/admin.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="../public/assets/images/logo.png" alt="Home Sofa Logo" class="sidebar-logo">
+                <span class="sidebar-title">Home Sofa</span>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="#dashboard" class="active" data-section="dashboard"><span class="sidebar-nav-icon">📊</span> Dashboard</a></li>
+                    <li><a href="#products" data-section="products"><span class="sidebar-nav-icon">🛋️</span> Products</a></li>
+                    <li><a href="#services" data-section="services"><span class="sidebar-nav-icon">🔧</span> Services</a></li>
+                    <li><a href="#reviews" data-section="reviews"><span class="sidebar-nav-icon">⭐</span> Reviews</a></li>
+                    <li><a href="#hero" data-section="hero"><span class="sidebar-nav-icon">🖼️</span> Hero Slider</a></li>
+                    <li><a href="#business" data-section="business"><span class="sidebar-nav-icon">🏢</span> Business Info</a></li>
+                    <li><a href="#contact" data-section="contact"><span class="sidebar-nav-icon">📞</span> Contact Requests</a></li>
+                    <li><a href="#settings" data-section="settings"><span class="sidebar-nav-icon">⚙️</span> Settings</a></li>
+                </ul>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button class="logout-btn" onclick="logout()">Sign Out</button>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="menu-toggle" id="menuToggle">☰</button>
+                    <div class="breadcrumb">
+                        <a href="#">Admin</a> / <span id="currentSection">Dashboard</span>
+                    </div>
+                </div>
+                <div class="top-bar-right">
+                    <div class="user-menu">
+                        <div class="user-avatar">A</div>
+                        <span class="user-name">Admin</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Dashboard Section -->
+                <section id="dashboard-section" class="content-section">
+                    <div class="page-header">
+                        <h1 class="page-title">Dashboard</h1>
+                        <div class="page-actions">
+                            <button class="btn btn-primary" onclick="refreshData()">Refresh Data</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats Grid -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon blue">🛋️</div>
+                            <div class="stat-info">
+                                <h3 id="totalProducts">0</h3>
+                                <p>Total Products</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon green">⭐</div>
+                            <div class="stat-info">
+                                <h3 id="totalReviews">0</h3>
+                                <p>Total Reviews</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon yellow">📧</div>
+                            <div class="stat-info">
+                                <h3 id="pendingInquiries">0</h3>
+                                <p>Pending Inquiries</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon red">⏳</div>
+                            <div class="stat-info">
+                                <h3 id="pendingReviews">0</h3>
+                                <p>Pending Reviews</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Activity -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Recent Activity</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Activity</th>
+                                            <th>Type</th>
+                                            <th>Date</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentActivity">
+                                        <!-- Recent activity will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Products Section -->
+                <section id="products-section" class="content-section" style="display: none;">
+                    <div class="page-header">
+                        <h1 class="page-title">Products</h1>
+                        <div class="page-actions">
+                            <button class="btn btn-primary" onclick="showProductModal()">Add Product</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Image</th>
+                                            <th>Name</th>
+                                            <th>Price</th>
+                                            <th>Category</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="productsTable">
+                                        <!-- Products will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Services Section -->
+                <section id="services-section" class="content-section" style="display: none;">
+                    <div class="page-header">
+                        <h1 class="page-title">Services</h1>
+                        <div class="page-actions">
+                            <button class="btn btn-primary" onclick="showServiceModal()">Add Service</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Image</th>
+                                            <th>Title</th>
+                                            <th>Description</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="servicesTable">
+                                        <!-- Services will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Reviews Section -->
+                <section id="reviews-section" class="content-section" style="display: none;">
+                    <div class="page-header">
+                        <h1 class="page-title">Reviews</h1>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Customer</th>
+                                            <th>Rating</th>
+                                            <th>Review</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reviewsTable">
+                                        <!-- Reviews will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Hero Slider Section -->
+                <section id="hero-section" class="content-section" style="display: none;">
+                    <div class="page-header">
+                        <h1 class="page-title">Hero Slider</h1>
+                        <div class="page-actions">
+                            <button class="btn btn-primary" onclick="showHeroModal()">Add Slide</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Image</th>
+                                            <th>Title</th>
+                                            <th>Order</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="heroTable">
+                                        <!-- Hero slides will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Business Info Section -->
+                <section id="business-section" class="content-section" style="display: none;">
+                    <div class="page-header">
+                        <h1 class="page-title">Business Information</h1>
+                        <div class="page-actions">
+                            <button class="btn btn-primary" onclick="saveBusinessInfo()">Save Changes</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <form id="businessInfoForm">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Shop Name</label>
+                                        <input type="text" name="shopName" id="shopName" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Phone</label>
+                                        <input type="tel" name="phone" id="phone" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>WhatsApp</label>
+                                        <input type="tel" name="whatsapp" id="whatsapp" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Email</label>
+                                        <input type="email" name="email" id="email" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Address</label>
+                                        <input type="text" name="address" id="address" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Opening Hours</label>
+                                        <input type="text" name="openingHours" id="openingHours" required>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Contact Requests Section -->
+                <section id="contact-section" class="content-section" style="display: none;">
+                    <div class="page-header">
+                        <h1 class="page-title">Contact Requests</h1>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Phone</th>
+                                            <th>Service</th>
+                                            <th>Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="contactTable">
+                                        <!-- Contact requests will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Settings Section -->
+                <section id="settings-section" class="content-section" style="display: none;">
+                    <div class="page-header">
+                        <h1 class="page-title">Settings</h1>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">API Configuration</h2>
+                        </div>
+                        <div class="card-body">
+                            <form id="apiConfigForm">
+                                <div class="form-group">
+                                    <label>Contentful Space ID</label>
+                                    <input type="text" name="spaceId" id="spaceId" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Contentful Access Token</label>
+                                    <input type="text" name="accessToken" id="accessToken" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Contentful Management Token</label>
+                                    <input type="text" name="managementToken" id="managementToken" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Configuration</button>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Product Modal -->
+    <div class="modal" id="productModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="productModalTitle">Add Product</h3>
+                <button class="modal-close" onclick="closeProductModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="productForm">
+                    <input type="hidden" name="productId" id="productId">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Product Name</label>
+                            <input type="text" name="name" id="productName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Price (AED)</label>
+                            <input type="number" name="price" id="productPrice" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select name="category" id="productCategory" required>
+                                <option value="sofa">Sofa</option>
+                                <option value="sofa-bed">Sofa Bed</option>
+                                <option value="sectional">Sectional</option>
+                                <option value="recliner">Recliner</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Display Order</label>
+                            <input type="number" name="displayOrder" id="productDisplayOrder" value="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Short Description</label>
+                        <textarea name="shortDescription" id="productShortDescription" rows="2" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Full Description</label>
+                        <textarea name="fullDescription" id="productFullDescription" rows="4" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Main Image</label>
+                        <div class="image-upload" onclick="document.getElementById('mainImageInput').click()">
+                            <div class="image-upload-icon">📷</div>
+                            <div class="image-upload-text">Click to upload main image</div>
+                            <input type="file" id="mainImageInput" accept="image/*" class="image-upload-input">
+                        </div>
+                        <div class="image-preview" id="mainImagePreview"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Gallery Images</label>
+                        <div class="image-upload" onclick="document.getElementById('galleryImagesInput').click()">
+                            <div class="image-upload-icon">📷</div>
+                            <div class="image-upload-text">Click to upload gallery images</div>
+                            <input type="file" id="galleryImagesInput" accept="image/*" multiple class="image-upload-input">
+                        </div>
+                        <div class="image-preview" id="galleryImagesPreview"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" name="featured" id="productFeatured"> Featured Product
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" name="bestSeller" id="productBestSeller"> Best Seller
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" name="available" id="productAvailable" checked> Available
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeProductModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="assets/js/dashboard.js"></script>
+</body>
+</html>

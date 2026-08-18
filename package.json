@@ -1,0 +1,27 @@
+{
+  "name": "sofa-shop-website",
+  "version": "1.0.0",
+  "description": "Sofa Shop Website with Admin Dashboard - Single Page Application",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx serve . -p 3000",
+    "build": "echo 'Static SPA - no build needed'",
+    "deploy": "gh-pages -d ."
+  },
+  "keywords": [
+    "sofa",
+    "shop",
+    "website",
+    "cms",
+    "spa"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "gh-pages": "^5.0.0",
+    "serve": "^14.2.0"
+  },
+  "dependencies": {
+    "contentful": "^10.0.0"
+  }
+}

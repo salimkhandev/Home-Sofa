@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Browse our complete collection of premium sofas and custom furniture">
+    <title>Products - Home Sofa</title>
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+    <link rel="stylesheet" href="assets/css/products.css">
+</head>
+<body>
+    <!-- Top Information Bar -->
+    <div class="top-bar" id="topBar">
+        <div class="container">
+            <div class="top-bar-content">
+                <span class="location">Serving Dubai</span>
+                <span class="hours">Open Today 9:00 AM - 10:00 PM</span>
+                <a href="https://wa.me/971500000000" class="whatsapp-link" target="_blank">
+                    <span class="whatsapp-icon">📱</span> WhatsApp
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header / Navigation -->
+    <header class="header" id="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-section">
+                    <img src="assets/images/logo.png" alt="Home Sofa Logo" class="logo" id="logo">
+                    <h1 class="shop-name" id="shopName">Home Sofa</h1>
+                </div>
+                <nav class="nav-menu" id="navMenu">
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="products.html" class="active">Sofas</a></li>
+                        <li><a href="index.html#services">Services</a></li>
+                        <li><a href="index.html#about">About</a></li>
+                        <li><a href="index.html#reviews">Reviews</a></li>
+                        <li><a href="index.html#contact">Contact</a></li>
+                    </ul>
+                </nav>
+                <div class="header-actions">
+                    <a href="https://wa.me/971500000000" class="btn btn-primary whatsapp-btn" target="_blank">
+                        WhatsApp Us
+                    </a>
+                    <button class="mobile-menu-btn" id="mobileMenuBtn">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <div class="container">
+            <h1>Our Sofa Collection</h1>
+            <p>Discover our complete range of premium sofas and custom furniture</p>
+        </div>
+    </section>
+
+    <!-- Filters -->
+    <section class="filters-section">
+        <div class="container">
+            <div class="filters">
+                <div class="filter-group">
+                    <label>Category:</label>
+                    <select id="categoryFilter">
+                        <option value="">All Categories</option>
+                        <option value="sofa">Sofas</option>
+                        <option value="sofa-bed">Sofa Beds</option>
+                        <option value="sectional">Sectional</option>
+                        <option value="recliner">Recliners</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Sort By:</label>
+                    <select id="sortFilter">
+                        <option value="default">Default</option>
+                        <option value="price-low">Price: Low to High</option>
+                        <option value="price-high">Price: High to Low</option>
+                        <option value="name">Name</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Show:</label>
+                    <select id="availabilityFilter">
+                        <option value="all">All Products</option>
+                        <option value="available">Available Only</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Grid -->
+    <section class="products-page-section">
+        <div class="container">
+            <div class="products-grid" id="productsGrid">
+                <!-- Products will be loaded from CMS -->
+            </div>
+            <div class="pagination" id="pagination">
+                <!-- Pagination will be rendered here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Product Modal -->
+    <div class="product-modal" id="productModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeProductModal()">&times;</button>
+            <div class="modal-body">
+                <div class="modal-gallery">
+                    <div class="main-image">
+                        <img id="modalMainImage" src="" alt="">
+                    </div>
+                    <div class="thumbnail-grid" id="modalThumbnails">
+                        <!-- Thumbnails will be rendered here -->
+                    </div>
+                </div>
+                <div class="modal-details">
+                    <h2 id="modalProductName"></h2>
+                    <div class="modal-price" id="modalPrice"></div>
+                    <div class="modal-badges" id="modalBadges"></div>
+                    <p id="modalDescription"></p>
+                    <div class="modal-specs">
+                        <div class="spec-item">
+                            <span class="spec-label">Category:</span>
+                            <span id="modalCategory"></span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Availability:</span>
+                            <span id="modalAvailability"></span>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <a href="https://wa.me/971500000000" class="btn btn-primary" id="modalWhatsapp" target="_blank">
+                            WhatsApp Us
+                        </a>
+                        <a href="tel:+971500000000" class="btn btn-secondary">
+                            Call Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Home Sofa</h3>
+                    <p>Dubai's premier sofa shop for custom sofa beds and upholstery solutions.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link">Facebook</a>
+                        <a href="#" class="social-link">Instagram</a>
+                        <a href="#" class="social-link">Twitter</a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="products.html">Products</a></li>
+                        <li><a href="index.html#services">Services</a></li>
+                        <li><a href="index.html#about">About</a></li>
+                        <li><a href="index.html#contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Services</h3>
+                    <ul>
+                        <li><a href="index.html#services">Sofa Beds</a></li>
+                        <li><a href="index.html#services">Upholstery</a></li>
+                        <li><a href="index.html#services">Custom Sofas</a></li>
+                        <li><a href="index.html#services">Repairs</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Contact</h3>
+                    <p>📍 Dubai, UAE</p>
+                    <p>📞 +971 50 000 0000</p>
+                    <p>✉️ info@homesofa.ae</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Home Sofa. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="assets/js/main.js"></script>
+    <script src="assets/js/products.js"></script>
+</body>
+</html>
