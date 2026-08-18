@@ -25,14 +25,219 @@ async function loadDataFromFile(filename) {
 
 async function saveDataToFile(filename, data) {
     try {
-        // In a real server environment, this would make an API call to save the file
-        // For GitHub Pages static site, we'll save to localStorage and show a message
+        // Save to localStorage for immediate testing
         localStorage.setItem(filename, JSON.stringify(data));
-        console.log(`Data saved to ${filename}:`, data);
+        console.log(`Data saved to localStorage ${filename}:`, data);
+        
+        // Try to save to GitHub if configured
+        const githubConfig = getGitHubConfig();
+        if (githubConfig && githubConfig.githubToken) {
+            await saveToGitHub(filename, data, githubConfig);
+        }
+        
         return true;
     } catch (error) {
         console.error(`Error saving ${filename}:`, error);
         return false;
+    }
+}
+
+// GitHub API Functions
+function getGitHubConfig() {
+    return {
+        githubOwner: localStorage.getItem('githubOwner') || '',
+        githubRepo: localStorage.getItem('githubRepo') || '',
+        githubToken: localStorage.getItem('githubToken') || '',
+        githubBranch: localStorage.getItem('githubBranch') || 'main'
+    };
+}
+
+async function saveToGitHub(filename, data, config) {
+    try {
+        const filePath = `admin/data/${filename}`;
+        const content = btoa(JSON.stringify(data, null, 2));
+        
+        // Get current file SHA if it exists
+        let sha = null;
+        try {
+            const getFileResponse = await fetch(
+                `https://api.github.com/repos/${config.githubOwner}/${config.githubRepo}/contents/${filePath}?ref=${config.githubBranch}`,
+                {
+                    headers: {
+                        'Authorization': `token ${config.githubToken}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                }
+            );
+            
+            if (getFileResponse.ok) {
+                const fileData = await getFileResponse.json();
+                sha = fileData.sha;
+            }
+        } catch (error) {
+            console.log('File does not exist yet, will create new');
+        }
+        
+        // Create or update file
+        const putData = {
+            message: `Update ${filename} via admin dashboard`,
+            content: content,
+            branch: config.githubBranch
+        };
+        
+        if (sha) {
+            putData.sha = sha;
+        }
+        
+        const putResponse = await fetch(
+            `https://api.github.com/repos/${config.githubOwner}/${config.githubRepo}/contents/${filePath}`,
+            {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${config.githubToken}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/vnd.github.v3+json'
+                },
+                body: JSON.stringify(putData)
+            }
+        );
+        
+        if (!putResponse.ok) {
+            throw new Error(`GitHub API error: ${putResponse.status}`);
+        }
+        
+        const result = await putResponse.json();
+        console.log('File saved to GitHub:', result);
+        
+        // Also update public data file
+        await updatePublicDataFile(filename, data, config);
+        
+        return true;
+    } catch (error) {
+        console.error('Error saving to GitHub:', error);
+        throw error;
+    }
+}
+
+async function updatePublicDataFile(filename, data, config) {
+    try {
+        const publicFilePath = `public/data/${filename}`;
+        const content = btoa(JSON.stringify(data, null, 2));
+        
+        // Get current file SHA if it exists
+        let sha = null;
+        try {
+            const getFileResponse = await fetch(
+                `https://api.github.com/repos/${config.githubOwner}/${config.githubRepo}/contents/${publicFilePath}?ref=${config.githubBranch}`,
+                {
+                    headers: {
+                        'Authorization': `token ${config.githubToken}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                }
+            );
+            
+            if (getFileResponse.ok) {
+                const fileData = await getFileResponse.json();
+                sha = fileData.sha;
+            }
+        } catch (error) {
+            console.log('Public file does not exist yet, will create new');
+        }
+        
+        // Create or update file
+        const putData = {
+            message: `Update public ${filename} via admin dashboard`,
+            content: content,
+            branch: config.githubBranch
+        };
+        
+        if (sha) {
+            putData.sha = sha;
+        }
+        
+        const putResponse = await fetch(
+            `https://api.github.com/repos/${config.githubOwner}/${config.githubRepo}/contents/${publicFilePath}`,
+            {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${config.githubToken}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/vnd.github.v3+json'
+                },
+                body: JSON.stringify(putData)
+            }
+        );
+        
+        if (!putResponse.ok) {
+            throw new Error(`GitHub API error for public file: ${putResponse.status}`);
+        }
+        
+        const result = await putResponse.json();
+        console.log('Public file saved to GitHub:', result);
+        
+        return true;
+    } catch (error) {
+        console.error('Error saving public file to GitHub:', error);
+        throw error;
+    }
+}
+
+async function checkDeploymentStatus() {
+    const config = getGitHubConfig();
+    const statusDiv = document.getElementById('deploymentStatus');
+    
+    if (!config.githubToken) {
+        statusDiv.innerHTML = '<p class="status-warning">⚠️ GitHub API not configured. Please configure GitHub credentials in settings.</p>';
+        return;
+    }
+    
+    try {
+        statusDiv.innerHTML = '<p class="status-loading">🔄 Checking deployment status...</p>';
+        
+        // Check latest workflow run
+        const response = await fetch(
+            `https://api.github.com/repos/${config.githubOwner}/${config.githubRepo}/actions/runs?branch=${config.githubBranch}&per_page=1`,
+            {
+                headers: {
+                    'Authorization': `token ${config.githubToken}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            }
+        );
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch workflow status');
+        }
+        
+        const data = await response.json();
+        const latestRun = data.workflow_runs[0];
+        
+        if (latestRun) {
+            const statusIcon = latestRun.status === 'completed' ? '✅' : '🔄';
+            const conclusionIcon = latestRun.conclusion === 'success' ? '✅' : '❌';
+            
+            statusDiv.innerHTML = `
+                <div class="status-item">
+                    <span class="status-icon">${statusIcon}</span>
+                    <span class="status-text">Status: ${latestRun.status}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-icon">${conclusionIcon}</span>
+                    <span class="status-text">Conclusion: ${latestRun.conclusion || 'running'}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-icon">📅</span>
+                    <span class="status-text">Last run: ${new Date(latestRun.created_at).toLocaleString()}</span>
+                </div>
+                <a href="${latestRun.html_url}" target="_blank" class="btn btn-secondary btn-sm">View Workflow Run</a>
+            `;
+        } else {
+            statusDiv.innerHTML = '<p class="status-info">ℹ️ No workflow runs found</p>';
+        }
+    } catch (error) {
+        console.error('Error checking deployment status:', error);
+        statusDiv.innerHTML = `<p class="status-error">❌ Error checking deployment status: ${error.message}</p>`;
     }
 }
 
@@ -48,7 +253,31 @@ const elements = {
 document.addEventListener('DOMContentLoaded', () => {
     checkAuthentication();
     initializeDashboard();
+    initializeGitHubConfigForm();
 });
+
+function initializeGitHubConfigForm() {
+    const form = document.getElementById('apiConfigForm');
+    if (form) {
+        // Load saved config
+        document.getElementById('githubOwner').value = localStorage.getItem('githubOwner') || '';
+        document.getElementById('githubRepo').value = localStorage.getItem('githubRepo') || '';
+        document.getElementById('githubToken').value = localStorage.getItem('githubToken') || '';
+        document.getElementById('githubBranch').value = localStorage.getItem('githubBranch') || 'main';
+        
+        // Handle form submission
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            localStorage.setItem('githubOwner', document.getElementById('githubOwner').value);
+            localStorage.setItem('githubRepo', document.getElementById('githubRepo').value);
+            localStorage.setItem('githubToken', document.getElementById('githubToken').value);
+            localStorage.setItem('githubBranch', document.getElementById('githubBranch').value);
+            
+            alert('GitHub API configuration saved successfully!');
+        });
+    }
+}
 
 function checkAuthentication() {
     const token = localStorage.getItem('adminToken');
@@ -390,14 +619,22 @@ function saveProduct() {
         state.products.push(productData);
     }
     
-    // Save to localStorage
-    saveDataToFile('products.json', state.products);
+    // Check if GitHub is configured
+    const githubConfig = getGitHubConfig();
+    const hasGitHubConfig = githubConfig.githubToken && githubConfig.githubOwner && githubConfig.githubRepo;
     
-    renderProductsTable();
-    renderDashboard();
-    closeProductModal();
-    
-    alert('Product saved! Changes saved to browser storage. To make permanent changes, update admin/data/products.json and redeploy.');
+    // Save to file system
+    saveDataToFile('products.json', state.products).then(success => {
+        renderProductsTable();
+        renderDashboard();
+        closeProductModal();
+        
+        if (hasGitHubConfig) {
+            alert('Product saved! Changes have been committed to GitHub and will trigger automatic deployment. Your website will be updated in a few minutes.');
+        } else {
+            alert('Product saved! Changes saved to browser storage. To make permanent changes with automatic deployment, configure GitHub API in Settings.');
+        }
+    });
 }
 
 function editProduct(productId) {
@@ -407,10 +644,20 @@ function editProduct(productId) {
 function deleteProduct(productId) {
     if (confirm('Are you sure you want to delete this product?')) {
         state.products = state.products.filter(p => p.id !== productId);
-        saveDataToFile('products.json', state.products);
-        renderProductsTable();
-        renderDashboard();
-        alert('Product deleted! Changes saved to browser storage. To make permanent changes, update admin/data/products.json and redeploy.');
+        
+        const githubConfig = getGitHubConfig();
+        const hasGitHubConfig = githubConfig.githubToken && githubConfig.githubOwner && githubConfig.githubRepo;
+        
+        saveDataToFile('products.json', state.products).then(success => {
+            renderProductsTable();
+            renderDashboard();
+            
+            if (hasGitHubConfig) {
+                alert('Product deleted! Changes have been committed to GitHub and will trigger automatic deployment.');
+            } else {
+                alert('Product deleted! Changes saved to browser storage. Configure GitHub API for automatic deployment.');
+            }
+        });
     }
 }
 
@@ -419,10 +666,20 @@ function approveReview(reviewId) {
     const review = state.reviews.find(r => r.id === reviewId);
     if (review) {
         review.status = 'approved';
-        saveDataToFile('reviews.json', state.reviews);
-        renderReviewsTable();
-        renderDashboard();
-        alert('Review approved! Changes saved to browser storage. To make permanent changes, update admin/data/reviews.json and redeploy.');
+        
+        const githubConfig = getGitHubConfig();
+        const hasGitHubConfig = githubConfig.githubToken && githubConfig.githubOwner && githubConfig.githubRepo;
+        
+        saveDataToFile('reviews.json', state.reviews).then(success => {
+            renderReviewsTable();
+            renderDashboard();
+            
+            if (hasGitHubConfig) {
+                alert('Review approved! Changes have been committed to GitHub and will trigger automatic deployment.');
+            } else {
+                alert('Review approved! Changes saved to browser storage. Configure GitHub API for automatic deployment.');
+            }
+        });
     }
 }
 
@@ -430,20 +687,40 @@ function rejectReview(reviewId) {
     const review = state.reviews.find(r => r.id === reviewId);
     if (review) {
         review.status = 'rejected';
-        saveDataToFile('reviews.json', state.reviews);
-        renderReviewsTable();
-        renderDashboard();
-        alert('Review rejected! Changes saved to browser storage. To make permanent changes, update admin/data/reviews.json and redeploy.');
+        
+        const githubConfig = getGitHubConfig();
+        const hasGitHubConfig = githubConfig.githubToken && githubConfig.githubOwner && githubConfig.githubRepo;
+        
+        saveDataToFile('reviews.json', state.reviews).then(success => {
+            renderReviewsTable();
+            renderDashboard();
+            
+            if (hasGitHubConfig) {
+                alert('Review rejected! Changes have been committed to GitHub and will trigger automatic deployment.');
+            } else {
+                alert('Review rejected! Changes saved to browser storage. Configure GitHub API for automatic deployment.');
+            }
+        });
     }
 }
 
 function deleteReview(reviewId) {
     if (confirm('Are you sure you want to delete this review?')) {
         state.reviews = state.reviews.filter(r => r.id !== reviewId);
-        saveDataToFile('reviews.json', state.reviews);
-        renderReviewsTable();
-        renderDashboard();
-        alert('Review deleted! Changes saved to browser storage. To make permanent changes, update admin/data/reviews.json and redeploy.');
+        
+        const githubConfig = getGitHubConfig();
+        const hasGitHubConfig = githubConfig.githubToken && githubConfig.githubOwner && githubConfig.githubRepo;
+        
+        saveDataToFile('reviews.json', state.reviews).then(success => {
+            renderReviewsTable();
+            renderDashboard();
+            
+            if (hasGitHubConfig) {
+                alert('Review deleted! Changes have been committed to GitHub and will trigger automatic deployment.');
+            } else {
+                alert('Review deleted! Changes saved to browser storage. Configure GitHub API for automatic deployment.');
+            }
+        });
     }
 }
 
@@ -458,10 +735,18 @@ function saveBusinessInfo() {
         openingHours: document.getElementById('openingHours').value
     };
     
-    // Save to localStorage
-    saveDataToFile('business-info.json', state.businessInfo);
+    // Check if GitHub is configured
+    const githubConfig = getGitHubConfig();
+    const hasGitHubConfig = githubConfig.githubToken && githubConfig.githubOwner && githubConfig.githubRepo;
     
-    alert('Business information saved! Changes saved to browser storage. To make permanent changes, update admin/data/business-info.json and redeploy.');
+    // Save to file system
+    saveDataToFile('business-info.json', state.businessInfo).then(success => {
+        if (hasGitHubConfig) {
+            alert('Business information saved! Changes have been committed to GitHub and will trigger automatic deployment. Your website will be updated in a few minutes.');
+        } else {
+            alert('Business information saved! Changes saved to browser storage. To make permanent changes with automatic deployment, configure GitHub API in Settings.');
+        }
+    });
 }
 
 function populateBusinessInfo() {
@@ -485,20 +770,40 @@ function markContactRequestAsRead(requestId) {
     const request = state.contactRequests.find(r => r.id === requestId);
     if (request) {
         request.status = 'read';
-        saveDataToFile('contact-requests.json', state.contactRequests);
-        renderContactTable();
-        renderDashboard();
-        alert('Contact request marked as read! Changes saved to browser storage. To make permanent changes, update admin/data/contact-requests.json and redeploy.');
+        
+        const githubConfig = getGitHubConfig();
+        const hasGitHubConfig = githubConfig.githubToken && githubConfig.githubOwner && githubConfig.githubRepo;
+        
+        saveDataToFile('contact-requests.json', state.contactRequests).then(success => {
+            renderContactTable();
+            renderDashboard();
+            
+            if (hasGitHubConfig) {
+                alert('Contact request marked as read! Changes have been committed to GitHub and will trigger automatic deployment.');
+            } else {
+                alert('Contact request marked as read! Changes saved to browser storage. Configure GitHub API for automatic deployment.');
+            }
+        });
     }
 }
 
 function deleteContactRequest(requestId) {
     if (confirm('Are you sure you want to delete this contact request?')) {
         state.contactRequests = state.contactRequests.filter(r => r.id !== requestId);
-        saveDataToFile('contact-requests.json', state.contactRequests);
-        renderContactTable();
-        renderDashboard();
-        alert('Contact request deleted! Changes saved to browser storage. To make permanent changes, update admin/data/contact-requests.json and redeploy.');
+        
+        const githubConfig = getGitHubConfig();
+        const hasGitHubConfig = githubConfig.githubToken && githubConfig.githubOwner && githubConfig.githubRepo;
+        
+        saveDataToFile('contact-requests.json', state.contactRequests).then(success => {
+            renderContactTable();
+            renderDashboard();
+            
+            if (hasGitHubConfig) {
+                alert('Contact request deleted! Changes have been committed to GitHub and will trigger automatic deployment.');
+            } else {
+                alert('Contact request deleted! Changes saved to browser storage. Configure GitHub API for automatic deployment.');
+            }
+        });
     }
 }
 
@@ -553,13 +858,21 @@ function saveService() {
         state.services.push({ id: newId, ...serviceData });
     }
     
-    // Save to localStorage
-    saveDataToFile('services.json', state.services);
+    // Check if GitHub is configured
+    const githubConfig = getGitHubConfig();
+    const hasGitHubConfig = githubConfig.githubToken && githubConfig.githubOwner && githubConfig.githubRepo;
     
-    renderServicesTable();
-    closeServiceModal();
-    
-    alert('Service saved! Changes saved to browser storage. To make permanent changes, update admin/data/services.json and redeploy.');
+    // Save to file system
+    saveDataToFile('services.json', state.services).then(success => {
+        renderServicesTable();
+        closeServiceModal();
+        
+        if (hasGitHubConfig) {
+            alert('Service saved! Changes have been committed to GitHub and will trigger automatic deployment. Your website will be updated in a few minutes.');
+        } else {
+            alert('Service saved! Changes saved to browser storage. To make permanent changes with automatic deployment, configure GitHub API in Settings.');
+        }
+    });
 }
 
 function editService(serviceId) {
@@ -569,9 +882,19 @@ function editService(serviceId) {
 function deleteService(serviceId) {
     if (confirm('Are you sure you want to delete this service?')) {
         state.services = state.services.filter(s => s.id !== serviceId);
-        saveDataToFile('services.json', state.services);
-        renderServicesTable();
-        alert('Service deleted! Changes saved to browser storage. To make permanent changes, update admin/data/services.json and redeploy.');
+        
+        const githubConfig = getGitHubConfig();
+        const hasGitHubConfig = githubConfig.githubToken && githubConfig.githubOwner && githubConfig.githubRepo;
+        
+        saveDataToFile('services.json', state.services).then(success => {
+            renderServicesTable();
+            
+            if (hasGitHubConfig) {
+                alert('Service deleted! Changes have been committed to GitHub and will trigger automatic deployment.');
+            } else {
+                alert('Service deleted! Changes saved to browser storage. Configure GitHub API for automatic deployment.');
+            }
+        });
     }
 }
 
@@ -629,13 +952,21 @@ function saveHero() {
         state.heroSlides.push({ id: newId, ...heroData });
     }
     
-    // Save to localStorage
-    saveDataToFile('hero-slides.json', state.heroSlides);
+    // Check if GitHub is configured
+    const githubConfig = getGitHubConfig();
+    const hasGitHubConfig = githubConfig.githubToken && githubConfig.githubOwner && githubConfig.githubRepo;
     
-    renderHeroTable();
-    closeHeroModal();
-    
-    alert('Hero slide saved! Changes saved to browser storage. To make permanent changes, update admin/data/hero-slides.json and redeploy.');
+    // Save to file system
+    saveDataToFile('hero-slides.json', state.heroSlides).then(success => {
+        renderHeroTable();
+        closeHeroModal();
+        
+        if (hasGitHubConfig) {
+            alert('Hero slide saved! Changes have been committed to GitHub and will trigger automatic deployment. Your website will be updated in a few minutes.');
+        } else {
+            alert('Hero slide saved! Changes saved to browser storage. To make permanent changes with automatic deployment, configure GitHub API in Settings.');
+        }
+    });
 }
 
 function editHeroSlide(slideId) {
@@ -645,9 +976,19 @@ function editHeroSlide(slideId) {
 function deleteHeroSlide(slideId) {
     if (confirm('Are you sure you want to delete this hero slide?')) {
         state.heroSlides = state.heroSlides.filter(s => s.id !== slideId);
-        saveDataToFile('hero-slides.json', state.heroSlides);
-        renderHeroTable();
-        alert('Hero slide deleted! Changes saved to browser storage. To make permanent changes, update admin/data/hero-slides.json and redeploy.');
+        
+        const githubConfig = getGitHubConfig();
+        const hasGitHubConfig = githubConfig.githubToken && githubConfig.githubOwner && githubConfig.githubRepo;
+        
+        saveDataToFile('hero-slides.json', state.heroSlides).then(success => {
+            renderHeroTable();
+            
+            if (hasGitHubConfig) {
+                alert('Hero slide deleted! Changes have been committed to GitHub and will trigger automatic deployment.');
+            } else {
+                alert('Hero slide deleted! Changes saved to browser storage. Configure GitHub API for automatic deployment.');
+            }
+        });
     }
 }
 
