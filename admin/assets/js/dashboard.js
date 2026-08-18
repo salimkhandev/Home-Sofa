@@ -9,6 +9,33 @@ let state = {
     currentSection: 'dashboard'
 };
 
+// Data Management Functions
+async function loadDataFromFile(filename) {
+    try {
+        const response = await fetch(`data/${filename}`);
+        if (!response.ok) {
+            throw new Error(`Failed to load ${filename}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error(`Error loading ${filename}:`, error);
+        return null;
+    }
+}
+
+async function saveDataToFile(filename, data) {
+    try {
+        // In a real server environment, this would make an API call to save the file
+        // For GitHub Pages static site, we'll save to localStorage and show a message
+        localStorage.setItem(filename, JSON.stringify(data));
+        console.log(`Data saved to ${filename}:`, data);
+        return true;
+    } catch (error) {
+        console.error(`Error saving ${filename}:`, error);
+        return false;
+    }
+}
+
 // DOM Elements
 const elements = {
     sidebar: document.getElementById('sidebar'),
@@ -67,126 +94,31 @@ async function initializeDashboard() {
 }
 
 async function loadDashboardData() {
-    // In production, fetch from your API/Contentful
-    // For now, using placeholder data
+    // Load data from JSON files
+    state.products = await loadDataFromFile('products.json') || [];
+    state.services = await loadDataFromFile('services.json') || [];
+    state.reviews = await loadDataFromFile('reviews.json') || [];
+    state.heroSlides = await loadDataFromFile('hero-slides.json') || [];
+    state.businessInfo = await loadDataFromFile('business-info.json') || {};
+    state.contactRequests = await loadDataFromFile('contact-requests.json') || [];
     
-    state.products = await fetchProducts();
-    state.services = await fetchServices();
-    state.reviews = await fetchReviews();
-    state.heroSlides = await fetchHeroSlides();
-    state.businessInfo = await fetchBusinessInfo();
-    state.contactRequests = await fetchContactRequests();
+    // Check localStorage for any unsaved changes
+    const localStorageProducts = localStorage.getItem('products.json');
+    const localStorageServices = localStorage.getItem('services.json');
+    const localStorageReviews = localStorage.getItem('reviews.json');
+    const localStorageHeroSlides = localStorage.getItem('hero-slides.json');
+    const localStorageBusinessInfo = localStorage.getItem('business-info.json');
+    const localStorageContactRequests = localStorage.getItem('contact-requests.json');
+    
+    if (localStorageProducts) state.products = JSON.parse(localStorageProducts);
+    if (localStorageServices) state.services = JSON.parse(localStorageServices);
+    if (localStorageReviews) state.reviews = JSON.parse(localStorageReviews);
+    if (localStorageHeroSlides) state.heroSlides = JSON.parse(localStorageHeroSlides);
+    if (localStorageBusinessInfo) state.businessInfo = JSON.parse(localStorageBusinessInfo);
+    if (localStorageContactRequests) state.contactRequests = JSON.parse(localStorageContactRequests);
 }
 
-// Placeholder data fetching functions
-async function fetchProducts() {
-    return [
-        {
-            id: 1,
-            name: 'Nebraska U-Shape',
-            price: 4200,
-            shortDescription: 'Custom-made U-shaped sofa',
-            fullDescription: 'Elegant U-shaped sofa perfect for large living rooms.',
-            category: 'sectional',
-            mainImage: 'assets/images/product1.jpg',
-            galleryImages: [],
-            featured: true,
-            bestSeller: true,
-            available: true,
-            displayOrder: 1
-        },
-        {
-            id: 2,
-            name: 'L-Shaped Modern',
-            price: 3500,
-            shortDescription: 'Contemporary L-shaped sofa',
-            fullDescription: 'Modern L-shaped sofa with clean lines.',
-            category: 'sectional',
-            mainImage: 'assets/images/product2.jpg',
-            galleryImages: [],
-            featured: true,
-            bestSeller: false,
-            available: true,
-            displayOrder: 2
-        }
-    ];
-}
 
-async function fetchServices() {
-    return [
-        {
-            id: 1,
-            title: 'Premium Sofa Beds',
-            description: 'Professional sofa bed solutions',
-            image: 'assets/images/service1.jpg',
-            features: ['Custom sizes', 'Premium materials']
-        },
-        {
-            id: 2,
-            title: 'Upholstery Services',
-            description: 'Expert upholstery services',
-            image: 'assets/images/service2.jpg',
-            features: ['Fabric replacement', 'Foam replacement']
-        }
-    ];
-}
-
-async function fetchReviews() {
-    return [
-        {
-            id: 1,
-            name: 'Sarah Johnson',
-            rating: 5,
-            reviewText: 'Amazing quality and service!',
-            status: 'approved'
-        },
-        {
-            id: 2,
-            name: 'Mohammed Ali',
-            rating: 5,
-            reviewText: 'Best sofa shop in Dubai.',
-            status: 'pending'
-        }
-    ];
-}
-
-async function fetchHeroSlides() {
-    return [
-        {
-            id: 1,
-            image: 'assets/images/hero1.jpg',
-            title: 'Custom Sofa Beds',
-            order: 1,
-            active: true
-        }
-    ];
-}
-
-async function fetchBusinessInfo() {
-    return {
-        shopName: 'Home Sofa',
-        phone: '+971 50 000 0000',
-        whatsapp: '+971 50 000 0000',
-        email: 'info@homesofa.ae',
-        address: 'Dubai, UAE',
-        openingHours: '9:00 AM - 10:00 PM'
-    };
-}
-
-async function fetchContactRequests() {
-    return [
-        {
-            id: 1,
-            name: 'John Doe',
-            email: 'john@example.com',
-            phone: '+971 50 123 4567',
-            service: 'sofa-bed',
-            message: 'Interested in custom sofa bed',
-            date: '2024-01-15',
-            status: 'pending'
-        }
-    ];
-}
 
 function renderDashboard() {
     // Update stats
@@ -395,6 +327,7 @@ function initializeMobileMenu() {
 function showProductModal(productId = null) {
     const modal = document.getElementById('productModal');
     const title = document.getElementById('productModalTitle');
+    const form = document.getElementById('productForm');
     
     if (productId) {
         title.textContent = 'Edit Product';
@@ -413,15 +346,16 @@ function showProductModal(productId = null) {
         }
     } else {
         title.textContent = 'Add Product';
-        document.getElementById('productForm').reset();
+        form.reset();
         document.getElementById('productId').value = '';
+        document.getElementById('productAvailable').checked = true;
     }
     
-    modal.classList.add('active');
+    modal.style.display = 'block';
 }
 
 function closeProductModal() {
-    document.getElementById('productModal').classList.remove('active');
+    document.getElementById('productModal').style.display = 'none';
 }
 
 function saveProduct() {
@@ -456,12 +390,14 @@ function saveProduct() {
         state.products.push(productData);
     }
     
+    // Save to localStorage
+    saveDataToFile('products.json', state.products);
+    
     renderProductsTable();
     renderDashboard();
     closeProductModal();
     
-    // In production, save to Contentful
-    console.log('Product saved:', productData);
+    alert('Product saved! Changes saved to browser storage. To make permanent changes, update admin/data/products.json and redeploy.');
 }
 
 function editProduct(productId) {
@@ -471,11 +407,10 @@ function editProduct(productId) {
 function deleteProduct(productId) {
     if (confirm('Are you sure you want to delete this product?')) {
         state.products = state.products.filter(p => p.id !== productId);
+        saveDataToFile('products.json', state.products);
         renderProductsTable();
         renderDashboard();
-        
-        // In production, delete from Contentful
-        console.log('Product deleted:', productId);
+        alert('Product deleted! Changes saved to browser storage. To make permanent changes, update admin/data/products.json and redeploy.');
     }
 }
 
@@ -484,11 +419,10 @@ function approveReview(reviewId) {
     const review = state.reviews.find(r => r.id === reviewId);
     if (review) {
         review.status = 'approved';
+        saveDataToFile('reviews.json', state.reviews);
         renderReviewsTable();
         renderDashboard();
-        
-        // In production, update in Contentful
-        console.log('Review approved:', reviewId);
+        alert('Review approved! Changes saved to browser storage. To make permanent changes, update admin/data/reviews.json and redeploy.');
     }
 }
 
@@ -496,22 +430,20 @@ function rejectReview(reviewId) {
     const review = state.reviews.find(r => r.id === reviewId);
     if (review) {
         review.status = 'rejected';
+        saveDataToFile('reviews.json', state.reviews);
         renderReviewsTable();
         renderDashboard();
-        
-        // In production, update in Contentful
-        console.log('Review rejected:', reviewId);
+        alert('Review rejected! Changes saved to browser storage. To make permanent changes, update admin/data/reviews.json and redeploy.');
     }
 }
 
 function deleteReview(reviewId) {
     if (confirm('Are you sure you want to delete this review?')) {
         state.reviews = state.reviews.filter(r => r.id !== reviewId);
+        saveDataToFile('reviews.json', state.reviews);
         renderReviewsTable();
         renderDashboard();
-        
-        // In production, delete from Contentful
-        console.log('Review deleted:', reviewId);
+        alert('Review deleted! Changes saved to browser storage. To make permanent changes, update admin/data/reviews.json and redeploy.');
     }
 }
 
@@ -526,10 +458,19 @@ function saveBusinessInfo() {
         openingHours: document.getElementById('openingHours').value
     };
     
-    alert('Business information saved successfully!');
+    // Save to localStorage
+    saveDataToFile('business-info.json', state.businessInfo);
     
-    // In production, save to Contentful
-    console.log('Business info saved:', state.businessInfo);
+    alert('Business information saved! Changes saved to browser storage. To make permanent changes, update admin/data/business-info.json and redeploy.');
+}
+
+function populateBusinessInfo() {
+    document.getElementById('shopName').value = state.businessInfo.shopName || '';
+    document.getElementById('phone').value = state.businessInfo.phone || '';
+    document.getElementById('whatsapp').value = state.businessInfo.whatsapp || '';
+    document.getElementById('email').value = state.businessInfo.email || '';
+    document.getElementById('address').value = state.businessInfo.address || '';
+    document.getElementById('openingHours').value = state.businessInfo.openingHours || '';
 }
 
 // Contact Request Management
@@ -540,48 +481,171 @@ function viewContactRequest(requestId) {
     }
 }
 
-function deleteContactRequest(requestId) {
-    if (confirm('Are you sure you want to delete this contact request?')) {
-        state.contactRequests = state.contactRequests.filter(r => r.id !== requestId);
+function markContactRequestAsRead(requestId) {
+    const request = state.contactRequests.find(r => r.id === requestId);
+    if (request) {
+        request.status = 'read';
+        saveDataToFile('contact-requests.json', state.contactRequests);
         renderContactTable();
         renderDashboard();
-        
-        // In production, delete from Contentful
-        console.log('Contact request deleted:', requestId);
+        alert('Contact request marked as read! Changes saved to browser storage. To make permanent changes, update admin/data/contact-requests.json and redeploy.');
     }
 }
 
-// Service Management (placeholder functions)
-function showServiceModal() {
-    alert('Service modal would open here');
+function deleteContactRequest(requestId) {
+    if (confirm('Are you sure you want to delete this contact request?')) {
+        state.contactRequests = state.contactRequests.filter(r => r.id !== requestId);
+        saveDataToFile('contact-requests.json', state.contactRequests);
+        renderContactTable();
+        renderDashboard();
+        alert('Contact request deleted! Changes saved to browser storage. To make permanent changes, update admin/data/contact-requests.json and redeploy.');
+    }
+}
+
+// Service Management
+function showServiceModal(serviceId = null) {
+    const modal = document.getElementById('serviceModal');
+    const title = document.getElementById('serviceModalTitle');
+    const form = document.getElementById('serviceForm');
+    
+    if (serviceId) {
+        const service = state.services.find(s => s.id === serviceId);
+        if (service) {
+            title.textContent = 'Edit Service';
+            document.getElementById('serviceId').value = service.id;
+            document.getElementById('serviceTitle').value = service.title;
+            document.getElementById('serviceDescription').value = service.description;
+            document.getElementById('serviceFeatures').value = service.features ? service.features.join(', ') : '';
+        }
+    } else {
+        title.textContent = 'Add Service';
+        form.reset();
+        document.getElementById('serviceId').value = '';
+    }
+    
+    modal.style.display = 'block';
+}
+
+function closeServiceModal() {
+    document.getElementById('serviceModal').style.display = 'none';
+}
+
+function saveService() {
+    const form = document.getElementById('serviceForm');
+    const serviceId = document.getElementById('serviceId').value;
+    
+    const serviceData = {
+        title: document.getElementById('serviceTitle').value,
+        description: document.getElementById('serviceDescription').value,
+        features: document.getElementById('serviceFeatures').value.split(',').map(f => f.trim()).filter(f => f),
+        image: 'assets/images/service-placeholder.jpg'
+    };
+    
+    if (serviceId) {
+        // Update existing service
+        const index = state.services.findIndex(s => s.id === parseInt(serviceId));
+        if (index !== -1) {
+            state.services[index] = { ...state.services[index], ...serviceData };
+        }
+    } else {
+        // Add new service
+        const newId = Math.max(...state.services.map(s => s.id), 0) + 1;
+        state.services.push({ id: newId, ...serviceData });
+    }
+    
+    // Save to localStorage
+    saveDataToFile('services.json', state.services);
+    
+    renderServicesTable();
+    closeServiceModal();
+    
+    alert('Service saved! Changes saved to browser storage. To make permanent changes, update admin/data/services.json and redeploy.');
 }
 
 function editService(serviceId) {
-    alert('Edit service: ' + serviceId);
+    showServiceModal(serviceId);
 }
 
 function deleteService(serviceId) {
     if (confirm('Are you sure you want to delete this service?')) {
         state.services = state.services.filter(s => s.id !== serviceId);
+        saveDataToFile('services.json', state.services);
         renderServicesTable();
-        console.log('Service deleted:', serviceId);
+        alert('Service deleted! Changes saved to browser storage. To make permanent changes, update admin/data/services.json and redeploy.');
     }
 }
 
-// Hero Slide Management (placeholder functions)
-function showHeroModal() {
-    alert('Hero slide modal would open here');
+// Hero Slide Management
+function showHeroModal(slideId = null) {
+    const modal = document.getElementById('heroModal');
+    const title = document.getElementById('heroModalTitle');
+    const form = document.getElementById('heroForm');
+    
+    if (slideId) {
+        const slide = state.heroSlides.find(s => s.id === slideId);
+        if (slide) {
+            title.textContent = 'Edit Hero Slide';
+            document.getElementById('heroId').value = slide.id;
+            document.getElementById('heroTitle').value = slide.title;
+            document.getElementById('heroOrder').value = slide.order;
+            document.getElementById('heroActive').checked = slide.active;
+        }
+    } else {
+        title.textContent = 'Add Hero Slide';
+        form.reset();
+        document.getElementById('heroId').value = '';
+        document.getElementById('heroActive').checked = true;
+    }
+    
+    modal.style.display = 'block';
+}
+
+function closeHeroModal() {
+    document.getElementById('heroModal').style.display = 'none';
+}
+
+function saveHero() {
+    const form = document.getElementById('heroForm');
+    const heroId = document.getElementById('heroId').value;
+    
+    const heroData = {
+        title: document.getElementById('heroTitle').value,
+        order: parseInt(document.getElementById('heroOrder').value),
+        active: document.getElementById('heroActive').checked,
+        image: 'assets/images/hero-placeholder.jpg'
+    };
+    
+    if (heroId) {
+        // Update existing slide
+        const index = state.heroSlides.findIndex(s => s.id === parseInt(heroId));
+        if (index !== -1) {
+            state.heroSlides[index] = { ...state.heroSlides[index], ...heroData };
+        }
+    } else {
+        // Add new slide
+        const newId = Math.max(...state.heroSlides.map(s => s.id), 0) + 1;
+        state.heroSlides.push({ id: newId, ...heroData });
+    }
+    
+    // Save to localStorage
+    saveDataToFile('hero-slides.json', state.heroSlides);
+    
+    renderHeroTable();
+    closeHeroModal();
+    
+    alert('Hero slide saved! Changes saved to browser storage. To make permanent changes, update admin/data/hero-slides.json and redeploy.');
 }
 
 function editHeroSlide(slideId) {
-    alert('Edit hero slide: ' + slideId);
+    showHeroModal(slideId);
 }
 
 function deleteHeroSlide(slideId) {
     if (confirm('Are you sure you want to delete this hero slide?')) {
         state.heroSlides = state.heroSlides.filter(s => s.id !== slideId);
+        saveDataToFile('hero-slides.json', state.heroSlides);
         renderHeroTable();
-        console.log('Hero slide deleted:', slideId);
+        alert('Hero slide deleted! Changes saved to browser storage. To make permanent changes, update admin/data/hero-slides.json and redeploy.');
     }
 }
 
@@ -603,7 +667,7 @@ function showError(message) {
     alert('Error: ' + message);
 }
 
-// Image upload handling (placeholder)
+// Image upload handling
 document.getElementById('mainImageInput')?.addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (file) {
@@ -634,4 +698,28 @@ document.getElementById('galleryImagesInput')?.addEventListener('change', functi
         };
         reader.readAsDataURL(file);
     });
+});
+
+document.getElementById('serviceImageInput')?.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('serviceImagePreview');
+            preview.innerHTML = `<img src="${e.target.result}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 4px;">`;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+document.getElementById('heroImageInput')?.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('heroImagePreview');
+            preview.innerHTML = `<img src="${e.target.result}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 4px;">`;
+        };
+        reader.readAsDataURL(file);
+    }
 });

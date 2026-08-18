@@ -721,7 +721,7 @@ body {
     padding: 20px;
 }
 
-.modal.active {
+.modal[style*="display: block"] {
     display: flex;
 }
 
