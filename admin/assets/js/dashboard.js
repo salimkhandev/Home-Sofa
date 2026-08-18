@@ -587,6 +587,7 @@ function showHeroModal(slideId = null) {
             title.textContent = 'Edit Hero Slide';
             document.getElementById('heroId').value = slide.id;
             document.getElementById('heroTitle').value = slide.title;
+            document.getElementById('heroDescription').value = slide.description || '';
             document.getElementById('heroOrder').value = slide.order;
             document.getElementById('heroActive').checked = slide.active;
         }
@@ -610,6 +611,7 @@ function saveHero() {
     
     const heroData = {
         title: document.getElementById('heroTitle').value,
+        description: document.getElementById('heroDescription').value,
         order: parseInt(document.getElementById('heroOrder').value),
         active: document.getElementById('heroActive').checked,
         image: 'assets/images/hero-placeholder.jpg'

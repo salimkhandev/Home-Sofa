@@ -98,6 +98,7 @@ function renderHeroSlider() {
         <div class="hero-slide ${index === 0 ? 'active' : ''}" data-slide="${index}" style="background-image: url('${slide.image}')">
             <div class="hero-content">
                 <h2 class="hero-title">${slide.title}</h2>
+                ${slide.description ? `<p class="hero-description">${slide.description}</p>` : ''}
                 <div class="hero-buttons">
                     <a href="#products" class="btn btn-primary">View Products</a>
                     <a href="#contact" class="btn btn-secondary">Contact Us</a>
