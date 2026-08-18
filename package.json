@@ -3,10 +3,12 @@
   "version": "1.0.0",
   "description": "Sofa Shop Website with Admin Dashboard - Single Page Application",
   "main": "index.html",
+  "homepage": "https://salimkhandev.github.io/Home-Sofa/",
   "scripts": {
     "dev": "npx serve . -p 3000",
     "build": "echo 'Static SPA - no build needed'",
-    "deploy": "gh-pages -d ."
+    "deploy": "gh-pages -d .",
+    "predeploy": "echo 'Deploying to GitHub Pages...'"
   },
   "keywords": [
     "sofa",
